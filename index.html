@@ -1,0 +1,1541 @@
+﻿<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#0f172a">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Marea Finanza">
+    <title>Portfolio Insight | Accesso Riservato</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <style>
+        :root {
+            --primary: #0f172a;
+            --primary-light: #1e293b;
+            --accent: #d4af37;
+            --accent-soft: rgba(212, 175, 55, 0.14);
+            --success: #10b981;
+            --success-soft: rgba(16, 185, 129, 0.14);
+            --warning: #f59e0b;
+            --warning-soft: rgba(245, 158, 11, 0.14);
+            --danger: #ef4444;
+            --danger-soft: rgba(239, 68, 68, 0.14);
+            --blue: #0ea5e9;
+            --bg: #f1f5f9;
+            --card: #ffffff;
+            --card-alt: #f8fafc;
+            --text: #0f172a;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+            --nav-bg: rgba(15, 23, 42, 0.94);
+            --shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.06);
+        }
+
+        body.dark {
+            --bg: #090f1d;
+            --card: #111c30;
+            --card-alt: #17253f;
+            --text: #f1f5f9;
+            --text-muted: #94a3b8;
+            --border: #1e3252;
+            --nav-bg: rgba(9, 15, 29, 0.94);
+            --shadow: 0 8px 25px -4px rgba(0, 0, 0, 0.45);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            min-height: 100dvh;
+            padding-top: env(safe-area-inset-top);
+            padding-bottom: calc(82px + env(safe-area-inset-bottom));
+            line-height: 1.5;
+            transition: background-color 0.25s ease, color 0.25s ease;
+        }
+
+        /* ==========================================
+           LOCK SCREEN (PROTEZIONE PIN)
+           ========================================== */
+        #lockScreen {
+            position: fixed;
+            inset: 0;
+            z-index: 9999;
+            background: radial-gradient(circle at top, #1e293b 0%, #090f1d 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            color: #ffffff;
+            transition: opacity 0.35s ease, visibility 0.35s ease;
+        }
+        #lockScreen.unlocked {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+        .lock-card {
+            width: 100%;
+            max-width: 360px;
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(212, 175, 55, 0.35);
+            border-radius: 24px;
+            padding: 28px 24px;
+            text-align: center;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
+        }
+        .lock-logo {
+            width: 54px; height: 54px;
+            border-radius: 14px;
+            background: linear-gradient(135deg, #d4af37, #9a7b1c);
+            color: #0f172a;
+            font-family: 'Playfair Display', serif;
+            font-size: 1.65rem;
+            font-weight: 700;
+            display: flex; align-items: center; justify-content: center;
+            margin: 0 auto 12px auto;
+            box-shadow: 0 6px 20px rgba(212, 175, 55, 0.35);
+        }
+        .lock-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.4rem;
+            color: #ffffff;
+            margin-bottom: 4px;
+        }
+        .lock-sub {
+            font-size: 0.76rem;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 1.2px;
+            margin-bottom: 20px;
+        }
+        .pin-dots {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            margin-bottom: 18px;
+        }
+        .pin-dot {
+            width: 14px; height: 14px;
+            border-radius: 50%;
+            border: 2px solid rgba(212, 175, 55, 0.6);
+            background: transparent;
+            transition: all 0.15s ease;
+        }
+        .pin-dot.filled {
+            background: #d4af37;
+            border-color: #d4af37;
+            box-shadow: 0 0 10px rgba(212, 175, 55, 0.6);
+            transform: scale(1.1);
+        }
+        .pin-dot.error {
+            background: #ef4444;
+            border-color: #ef4444;
+        }
+        .lock-msg {
+            font-size: 0.78rem;
+            color: #f87171;
+            min-height: 20px;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+        .keypad {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+        .key-btn {
+            height: 54px;
+            border-radius: 14px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.06);
+            color: #ffffff;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.25rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.12s ease;
+            touch-action: manipulation;
+        }
+        .key-btn:hover { background: rgba(212, 175, 55, 0.18); border-color: rgba(212, 175, 55, 0.4); }
+        .key-btn:active { transform: scale(0.93); background: #d4af37; color: #0f172a; }
+        .remember-row {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            font-size: 0.78rem;
+            color: #cbd5e1;
+        }
+
+        /* Top Header Sticky */
+        .app-header {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: var(--nav-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-bottom: 1px solid rgba(212, 175, 55, 0.3);
+            color: #ffffff;
+            padding: 12px 20px;
+        }
+        .header-inner {
+            max-width: 1240px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+        }
+        .brand-wrap { display: flex; align-items: center; gap: 12px; }
+        .brand-logo {
+            width: 38px; height: 38px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #d4af37, #9a7b1c);
+            color: #0f172a;
+            font-family: 'Playfair Display', serif;
+            font-weight: 700;
+            font-size: 1.25rem;
+            display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 2px 10px rgba(212, 175, 55, 0.35);
+        }
+        .brand-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.25rem;
+            letter-spacing: -0.3px;
+            color: #ffffff;
+            line-height: 1.1;
+        }
+        .brand-sub {
+            font-size: 0.7rem;
+            color: #cbd5e1;
+            text-transform: uppercase;
+            letter-spacing: 1.2px;
+            font-weight: 600;
+        }
+
+        /* Desktop Navigation Pills */
+        .desktop-nav {
+            display: flex;
+            gap: 6px;
+            background: rgba(255, 255, 255, 0.06);
+            padding: 4px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .nav-btn {
+            background: transparent;
+            color: #cbd5e1;
+            border: none;
+            padding: 8px 14px;
+            border-radius: 9px;
+            font-size: 0.82rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            touch-action: manipulation;
+        }
+        .nav-btn:hover { color: #ffffff; background: rgba(255, 255, 255, 0.08); }
+        .nav-btn.active {
+            background: var(--accent);
+            color: #0f172a;
+            box-shadow: 0 2px 10px rgba(212, 175, 55, 0.3);
+        }
+
+        .header-actions { display: flex; align-items: center; gap: 8px; }
+        .live-pill {
+            display: inline-flex; align-items: center; gap: 6px;
+            background: rgba(16, 185, 129, 0.15);
+            border: 1px solid rgba(16, 185, 129, 0.4);
+            color: #34d399;
+            font-size: 0.72rem;
+            font-weight: 600;
+            padding: 5px 10px;
+            border-radius: 20px;
+        }
+        .live-dot {
+            width: 7px; height: 7px;
+            background: #10b981;
+            border-radius: 50%;
+            box-shadow: 0 0 8px #10b981;
+        }
+        .icon-btn {
+            background: rgba(255, 255, 255, 0.1);
+            color: #ffffff;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            width: 38px; height: 38px;
+            border-radius: 10px;
+            cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1rem;
+            transition: transform 0.15s ease, background 0.2s ease;
+            touch-action: manipulation;
+        }
+        .icon-btn:active { transform: scale(0.92); }
+
+        /* Container & Views */
+        .container {
+            max-width: 1240px;
+            margin: 0 auto;
+            padding: 22px 16px;
+        }
+        .tab-view { display: none; animation: fadeIn 0.28s ease-out; }
+        .tab-view.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Corporate Banner */
+        .hero-banner {
+            background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 100%);
+            color: #ffffff;
+            border-radius: 18px;
+            padding: 22px 24px;
+            margin-bottom: 20px;
+            border: 1px solid rgba(212, 175, 55, 0.35);
+            box-shadow: var(--shadow);
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+        }
+        .hero-left h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.5rem;
+            color: #ffffff;
+            margin-bottom: 4px;
+        }
+        .hero-left p { font-size: 0.82rem; color: #cbd5e1; }
+        .hero-badges { display: flex; flex-wrap: wrap; gap: 8px; }
+        .hero-badge {
+            background: rgba(255, 255, 255, 0.09);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            padding: 6px 12px;
+            border-radius: 10px;
+            font-size: 0.75rem;
+            color: #e2e8f0;
+        }
+        .hero-badge strong { color: var(--accent); font-family: 'JetBrains Mono', monospace; }
+
+        /* Bento KPI Grid */
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 14px;
+            margin-bottom: 22px;
+        }
+        .kpi-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 18px 20px;
+            box-shadow: var(--shadow);
+            position: relative;
+            overflow: hidden;
+        }
+        .kpi-card::before {
+            content: "";
+            position: absolute;
+            top: 0; left: 0; width: 4px; height: 100%;
+            background: var(--accent);
+        }
+        .kpi-card.kpi-green::before { background: var(--success); }
+        .kpi-card.kpi-blue::before { background: var(--blue); }
+        .kpi-label {
+            font-size: 0.72rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+        }
+        .kpi-value {
+            font-size: 1.55rem;
+            font-weight: 700;
+            color: var(--text);
+            font-family: 'JetBrains Mono', monospace;
+            letter-spacing: -0.5px;
+        }
+        .kpi-sub {
+            font-size: 0.76rem;
+            margin-top: 4px;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+        .gain { color: var(--success) !important; }
+        .loss { color: var(--danger) !important; }
+
+        /* Section Titles */
+        .sec-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin: 24px 0 14px 0;
+        }
+        .sec-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.3rem;
+            color: var(--text);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* Charts Grid */
+        .charts-grid {
+            display: grid;
+            grid-template-columns: 1.4fr 1fr;
+            gap: 16px;
+            margin-bottom: 22px;
+        }
+        .chart-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 18px;
+            box-shadow: var(--shadow);
+        }
+        .chart-card h3 {
+            font-size: 0.82rem;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: var(--text-muted);
+            margin-bottom: 12px;
+        }
+        .chart-wrap { position: relative; height: 270px; width: 100%; }
+
+        /* Filter Pills & Search */
+        .filter-bar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+        .filter-group { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px; }
+        .filter-chip {
+            background: var(--card);
+            color: var(--text-muted);
+            border: 1px solid var(--border);
+            padding: 7px 14px;
+            border-radius: 20px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 0.2s;
+            touch-action: manipulation;
+        }
+        .filter-chip.active {
+            background: var(--primary);
+            color: var(--accent);
+            border-color: var(--accent);
+        }
+        body.dark .filter-chip.active {
+            background: var(--accent);
+            color: #0f172a;
+        }
+        .search-input {
+            background: var(--card);
+            color: var(--text);
+            border: 1px solid var(--border);
+            padding: 8px 14px;
+            border-radius: 12px;
+            font-size: 0.82rem;
+            min-width: 220px;
+        }
+
+        /* Holding Cards */
+        .holdings-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+            gap: 14px;
+            margin-bottom: 24px;
+        }
+        .holding-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 18px;
+            box-shadow: var(--shadow);
+            transition: transform 0.2s ease;
+        }
+        .holding-card:hover { transform: translateY(-2px); }
+        .hc-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+        .isin-badge {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            font-weight: 700;
+            background: var(--card-alt);
+            color: var(--text);
+            border: 1px solid var(--border);
+            padding: 4px 8px;
+            border-radius: 6px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .isin-badge:active { transform: scale(0.95); }
+        .hc-title { font-size: 1.05rem; font-weight: 700; color: var(--text); margin-bottom: 2px; }
+        .hc-sub { font-size: 0.78rem; color: var(--text-muted); margin-bottom: 14px; }
+        .hc-metrics {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            background: var(--card-alt);
+            padding: 12px;
+            border-radius: 12px;
+            margin-bottom: 12px;
+        }
+        .hcm-item span { display: block; font-size: 0.65rem; text-transform: uppercase; color: var(--text-muted); font-weight: 600; }
+        .hcm-item strong { font-size: 0.92rem; font-family: 'JetBrains Mono', monospace; color: var(--text); }
+        .hc-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.76rem;
+            color: var(--text-muted);
+            padding-top: 8px;
+            border-top: 1px dashed var(--border);
+        }
+
+        /* Status Badges */
+        .rat-badge {
+            font-size: 0.66rem;
+            font-weight: 700;
+            padding: 4px 10px;
+            border-radius: 20px;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+            display: inline-block;
+        }
+        .rat-ok { background: var(--success-soft); color: var(--success); }
+        .rat-warn { background: var(--warning-soft); color: var(--warning); }
+        .rat-danger { background: var(--danger-soft); color: var(--danger); }
+        .rat-neutral { background: var(--card-alt); color: var(--text-muted); }
+
+        /* Tables */
+        .table-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            overflow-x: auto;
+            box-shadow: var(--shadow);
+            margin-bottom: 24px;
+        }
+        table { width: 100%; border-collapse: collapse; min-width: 600px; }
+        th {
+            background: var(--card-alt);
+            color: var(--text-muted);
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            padding: 14px 16px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+        td {
+            padding: 14px 16px;
+            font-size: 0.86rem;
+            border-bottom: 1px solid var(--border);
+            vertical-align: middle;
+        }
+        tr:last-child td { border-bottom: none; }
+
+        /* Info & Alert Cards */
+        .macro-box {
+            background: var(--accent-soft);
+            border-left: 4px solid var(--accent);
+            border-radius: 12px;
+            padding: 16px 20px;
+            margin-bottom: 20px;
+            font-size: 0.88rem;
+        }
+        .macro-box h4 { color: var(--text); margin-bottom: 6px; font-size: 0.95rem; }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        /* Bottom Navigation Bar for Mobile (Thumb Zone) */
+        .bottom-nav {
+            display: none;
+            position: fixed;
+            bottom: 0; left: 0; right: 0;
+            z-index: 200;
+            background: var(--nav-bg);
+            backdrop-filter: blur(18px);
+            -webkit-backdrop-filter: blur(18px);
+            border-top: 1px solid rgba(212, 175, 55, 0.28);
+            padding-bottom: env(safe-area-inset-bottom);
+        }
+        .bottom-nav-inner {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            height: 64px;
+        }
+        .bnav-item {
+            flex: 1;
+            height: 100%;
+            min-height: 48px;
+            background: none;
+            border: none;
+            color: #94a3b8;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 3px;
+            font-size: 0.68rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            touch-action: manipulation;
+        }
+        .bnav-item .bnav-icon { font-size: 1.2rem; line-height: 1; }
+        .bnav-item.active { color: var(--accent); }
+        .bnav-item:active { transform: scale(0.92); }
+
+        /* Toast Notification */
+        .toast {
+            position: fixed;
+            bottom: 85px;
+            left: 50%;
+            transform: translateX(-50%) translateY(20px);
+            background: #0f172a;
+            color: #ffffff;
+            border: 1px solid var(--accent);
+            padding: 10px 18px;
+            border-radius: 25px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.25s ease;
+            z-index: 1000;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+        }
+        .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+        @media (max-width: 900px) {
+            .desktop-nav { display: none; }
+            .bottom-nav { display: block; }
+            .charts-grid { grid-template-columns: 1fr; }
+            .holdings-grid { grid-template-columns: 1fr; }
+            .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+            .search-input { width: 100%; }
+        }
+        @media (max-width: 480px) {
+            .kpi-value { font-size: 1.25rem; }
+            .hero-left h1 { font-size: 1.25rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ==========================================
+         SCHERMATA DI SICUREZZA PIN (6 CIFRE)
+         ========================================== -->
+    <div id="lockScreen">
+        <div class="lock-card">
+            <div class="lock-logo">M</div>
+            <div class="lock-title">Portfolio Insight</div>
+            <div class="lock-sub">&#128274; Area Riservata &bull; Inserisci PIN</div>
+
+            <div class="pin-dots" id="pinDots">
+                <span class="pin-dot"></span>
+                <span class="pin-dot"></span>
+                <span class="pin-dot"></span>
+                <span class="pin-dot"></span>
+                <span class="pin-dot"></span>
+                <span class="pin-dot"></span>
+            </div>
+
+            <div class="lock-msg" id="lockMsg"></div>
+
+            <div class="keypad">
+                <button class="key-btn" onclick="pressPin('1')">1</button>
+                <button class="key-btn" onclick="pressPin('2')">2</button>
+                <button class="key-btn" onclick="pressPin('3')">3</button>
+                <button class="key-btn" onclick="pressPin('4')">4</button>
+                <button class="key-btn" onclick="pressPin('5')">5</button>
+                <button class="key-btn" onclick="pressPin('6')">6</button>
+                <button class="key-btn" onclick="pressPin('7')">7</button>
+                <button class="key-btn" onclick="pressPin('8')">8</button>
+                <button class="key-btn" onclick="pressPin('9')">9</button>
+                <button class="key-btn" onclick="clearPin()" style="font-size:0.85rem;color:#94a3b8;">CANC</button>
+                <button class="key-btn" onclick="pressPin('0')">0</button>
+                <button class="key-btn" onclick="backPin()" style="font-size:1rem;color:#d4af37;">&#9003;</button>
+            </div>
+
+            <label class="remember-row">
+                <input type="checkbox" id="rememberPin" checked>
+                <span>Ricorda su questo dispositivo</span>
+            </label>
+        </div>
+    </div>
+
+    <!-- Top Sticky Header -->
+    <header class="app-header">
+        <div class="header-inner">
+            <div class="brand-wrap">
+                <div class="brand-logo">M</div>
+                <div>
+                    <div class="brand-title">Portfolio Insight</div>
+                    <div class="brand-sub" id="brandSub">Area Patrimoniale Riservata</div>
+                </div>
+            </div>
+
+            <!-- Desktop Navigation -->
+            <nav class="desktop-nav" aria-label="Menu Principale">
+                <button class="nav-btn active" onclick="switchTab('dashboard')">&#128202; Panoramica</button>
+                <button class="nav-btn" onclick="switchTab('portfolio')">&#128188; Portafoglio &amp; Cedole</button>
+                <button class="nav-btn" onclick="switchTab('forecasts')">&#128302; Previsioni 60gg</button>
+                <button class="nav-btn" onclick="switchTab('strategy')">&#129517; Strategia &amp; Fisco</button>
+                <button class="nav-btn" onclick="switchTab('treasury')">&#127963;&#65039; Tesoreria 80k &amp; Radar</button>
+            </nav>
+
+            <div class="header-actions">
+                <div class="live-pill" title="Ultimo aggiornamento dati">
+                    <span class="live-dot"></span>
+                    <span id="headerDate">2026-11-02</span>
+                </div>
+                <button class="icon-btn" onclick="lockApp()" title="Blocca sessione (PIN)">&#128274;</button>
+                <button class="icon-btn" id="themeBtn" onclick="toggleTheme()" title="Cambia Tema Chiaro/Scuro">&#127769;</button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="container">
+
+        <!-- ==========================================
+             TAB 1: DASHBOARD / PANORAMICA
+             ========================================== -->
+        <section id="tab-dashboard" class="tab-view active">
+            <div class="hero-banner">
+                <div class="hero-left">
+                    <h1>Gestione Patrimoniale &amp; Tesoreria Aziendale</h1>
+                    <p id="heroSub">Dati cifrati &bull; Aggiornato il <strong>02/11/2026 12:04</strong></p>
+                </div>
+                <div class="hero-badges">
+                    <div class="hero-badge">Dossier: <strong id="badgeDossier">&bull;&bull;&bull;&bull;</strong></div>
+                    <div class="hero-badge">C/C: <strong id="badgeConto">&bull;&bull;&bull;&bull;</strong></div>
+                </div>
+            </div>
+
+            <!-- KPI Bento Cards -->
+            <div class="kpi-grid">
+                <div class="kpi-card">
+                    <div class="kpi-label">Capitale Investito Attivo</div>
+                    <div class="kpi-value" id="kpiInvestito">&bull;&bull;&bull;&bull;</div>
+                    <div class="kpi-sub">4 strumenti attivi in dossier</div>
+                </div>
+                <div class="kpi-card kpi-blue">
+                    <div class="kpi-label">Controvalore Attuale</div>
+                    <div class="kpi-value" id="kpiAttuale">&bull;&bull;&bull;&bull;</div>
+                    <div class="kpi-sub">Valorizzazione live MOT &amp; NAV</div>
+                </div>
+                <div class="kpi-card kpi-green">
+                    <div class="kpi-label">Performance Latente</div>
+                    <div class="kpi-value gain" id="kpiPL">&bull;&bull;&bull;&bull;</div>
+                    <div class="kpi-sub" id="kpiPLPerc">&bull;&bull;&bull;&bull;</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-label">Flusso Cedolare BTP (Annuo)</div>
+                    <div class="kpi-value gain" id="kpiCedola">&bull;&bull;&bull;&bull;</div>
+                    <div class="kpi-sub">Netti/anno (Anni 1-2) &rarr; fino a 2.467,50 &euro;</div>
+                </div>
+            </div>
+
+            <!-- Interactive Charts -->
+            <div class="charts-grid">
+                <div class="chart-card">
+                    <h3>&#128200; Evoluzione Storica Portafoglio (Investito vs Attuale)</h3>
+                    <div class="chart-wrap">
+                        <canvas id="historyChart"></canvas>
+                    </div>
+                </div>
+                <div class="chart-card">
+                    <h3>&#127919; Ripartizione Asset Attuali</h3>
+                    <div class="chart-wrap">
+                        <canvas id="allocationChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="sec-header">
+                <h2 class="sec-title">&#9889; Sintesi Posizioni Attive</h2>
+                <button class="filter-chip active" onclick="switchTab('portfolio')">Vedi Dettagli &amp; Cedole &rarr;</button>
+            </div>
+            <div class="holdings-grid" id="dashboardHoldings"></div>
+        </section>
+
+        <!-- ==========================================
+             TAB 2: PORTAFOGLIO, CEDOLE & STORICO CHIUSE
+             ========================================== -->
+        <section id="tab-portfolio" class="tab-view">
+            <div class="sec-header">
+                <h2 class="sec-title">&#128188; Dettaglio Strumenti in Portafoglio</h2>
+                <span style="font-size:0.8rem;color:var(--text-muted);">Tocca il codice ISIN per copiarlo negli appunti</span>
+            </div>
+
+            <div class="filter-bar">
+                <div class="filter-group">
+                    <button class="filter-chip active" onclick="filterHoldings('ALL', this)">Tutti (4)</button>
+                    <button class="filter-chip" onclick="filterHoldings('BOND', this)">Titoli di Stato (BTP)</button>
+                    <button class="filter-chip" onclick="filterHoldings('FUND', this)">Fondi Eurizon (3)</button>
+                    <button class="filter-chip" onclick="filterHoldings('GAIN', this)">In Guadagno</button>
+                </div>
+                <input type="search" id="searchInput" class="search-input" placeholder="Cerca per nome o ISIN..." oninput="renderPortfolioCards()">
+            </div>
+
+            <div class="holdings-grid" id="portfolioHoldings"></div>
+
+            <!-- Confronto Grafico Investito vs Attuale -->
+            <div class="chart-card" style="margin-bottom:24px;">
+                <h3>&#128202; Confronto Capitale Investito vs Valore Attuale per Strumento</h3>
+                <div class="chart-wrap">
+                    <canvas id="barCompareChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Piano Cedolare BTP Valore 27OT31 -->
+            <div class="sec-header">
+                <h2 class="sec-title">&#128197; Piano Cedolare BTP Valore 27OT31 (60.000 &euro; Nominali)</h2>
+            </div>
+            <div class="table-card">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Periodo Step-Up</th>
+                            <th>Tasso Annuo Lordo</th>
+                            <th>Tasso Annuo Netto (12,5%)</th>
+                            <th>Cedola Trimestrale Lorda</th>
+                            <th>Cedola Trimestrale Netta</th>
+                            <th>Totale Netto Annuo</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Anni 1 e 2</strong> (Ott 2026 &ndash; Ott 2028)</td>
+                            <td>3,70%</td>
+                            <td>3,2375%</td>
+                            <td>555,00 &euro;</td>
+                            <td class="gain"><strong>485,63 &euro;</strong> (ogni 3 mesi)</td>
+                            <td class="gain"><strong>1.942,50 &euro; / anno</strong></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Anni 3 e 4</strong> (Ott 2028 &ndash; Ott 2030)</td>
+                            <td>4,10%</td>
+                            <td>3,5875%</td>
+                            <td>615,00 &euro;</td>
+                            <td class="gain"><strong>538,13 &euro;</strong> (ogni 3 mesi)</td>
+                            <td class="gain"><strong>2.152,50 &euro; / anno</strong></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Anno 5</strong> (Ott 2030 &ndash; Ott 2031)</td>
+                            <td>4,70%</td>
+                            <td>4,1125%</td>
+                            <td>705,00 &euro;</td>
+                            <td class="gain"><strong>616,88 &euro;</strong> (ogni 3 mesi)</td>
+                            <td class="gain"><strong>2.467,50 &euro; / anno</strong></td>
+                        </tr>
+                        <tr style="background:var(--card-alt);font-weight:700;">
+                            <td colspan="3">TOTALE FLUSSI CEDOLARI IN 5 ANNI (20 Cedole Trimestrali: 27 Gen / 27 Apr / 27 Lug / 27 Ott)</td>
+                            <td>12.180,00 &euro; Lordi</td>
+                            <td colspan="2" class="gain" style="font-size:1rem;">+10.657,50 &euro; Netti (+ Rimborso 60.000 &euro;)</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Posizioni Chiuse -->
+            <div class="sec-header">
+                <h2 class="sec-title">&#9989; Posizioni Chiuse &amp; Guadagni Realizzati</h2>
+            </div>
+            <div class="table-card">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Codice ISIN</th>
+                            <th>Strumento</th>
+                            <th>Data Rimborso</th>
+                            <th>Capitale Iniziale</th>
+                            <th>Controvalore Liquidato</th>
+                            <th>P/L Realizzato</th>
+                            <th>Conto Accredito</th>
+                        </tr>
+                    </thead>
+                    <tbody id="closedPositionsBody"></tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- ==========================================
+             TAB 3: PREVISIONI A 60 GIORNI & REVISIONI
+             ========================================== -->
+        <section id="tab-forecasts" class="tab-view">
+            <div class="hero-banner" id="forecastHero"></div>
+
+            <div class="sec-header">
+                <h2 class="sec-title">&#128302; Target Previsionali per Strumento (Orizzonte 60 Giorni)</h2>
+            </div>
+            <div class="holdings-grid" id="forecastCards"></div>
+
+            <div class="sec-header">
+                <h2 class="sec-title">&#128260; Storico &amp; Verifica Previsioni Precedenti</h2>
+            </div>
+            <div class="table-card">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Strumento</th>
+                            <th>Data Previsione</th>
+                            <th>Scadenza Verifica</th>
+                            <th>NAV Iniziale</th>
+                            <th>NAV Previsto (Delta)</th>
+                            <th>Stato</th>
+                        </tr>
+                    </thead>
+                    <tbody id="pastForecastsBody"></tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- ==========================================
+             TAB 4: STRATEGIA, MACRO & EFFICIENZA FISCALE
+             ========================================== -->
+        <section id="tab-strategy" class="tab-view">
+            <div class="macro-box">
+                <h4>&#127757; Scenario Macroeconomico &amp; Posizionamento Strategico (Novembre 2026)</h4>
+                <p>Lo scenario di fine anno 2026 vede la BCE orientata alla stabilizzazione dei tassi guida (deposito al 2,25%-2,50%), con rendimenti obbligazionari sovrani appetibili (BTP nell'intorno del 3,6-4,0% lordo). L'inserimento diretto del <strong>BTP Valore 27OT31</strong> (60.000 &euro;) in tesoreria permette di bloccare flussi cedolari trimestrali certi a tassazione agevolata (12,5%) e proteggere integralmente il capitale, riducendo il peso delle commissioni di gestione dei fondi comuni.</p>
+            </div>
+
+            <div class="sec-header">
+                <h2 class="sec-title">&#127919; Piano di Allocazione Tattica Consigliata</h2>
+            </div>
+            <div class="table-card">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Strumento</th>
+                            <th>Azione Operativa</th>
+                            <th>Razionale Strategico</th>
+                            <th>Alternativa Efficiente</th>
+                        </tr>
+                    </thead>
+                    <tbody id="strategyTableBody"></tbody>
+                </table>
+            </div>
+
+            <div class="sec-header">
+                <h2 class="sec-title">&#9878;&#65039; Pilastri di Efficienza Fiscale &amp; Commissionale</h2>
+            </div>
+            <div class="grid-2">
+                <div class="holding-card">
+                    <div class="hc-title">&#128176; Tassazione Agevolata 12,5% vs 26%</div>
+                    <p style="font-size:0.85rem;color:var(--text-muted);margin-top:8px;">
+                        I fondi comuni misti/azionari scontano un'aliquota del <strong>26%</strong> sulla quota non governativa. I Titoli di Stato italiani ed europei (BTP, BOT, EU NextGen, Bonos) godono della ritenuta fiscale agevolata al <strong>12,5%</strong>: a parit&agrave; di rendimento lordo, lasciano in cassa a Marea S.r.l. oltre il <strong>18% di utile netto in pi&ugrave;</strong>.
+                    </p>
+                </div>
+                <div class="holding-card">
+                    <div class="hc-title">&#128201; Zero Commissioni di Gestione (No Drag Fee)</div>
+                    <p style="font-size:0.85rem;color:var(--text-muted);margin-top:8px;">
+                        I fondi attivi bancari trattengono ogni anno tra lo <strong>0,80% e l'1,40%</strong> di commissioni di gestione implicite nel NAV. Detenere direttamente BTP Valore e titoli governativi sul MOT azzera i costi di mantenimento ricorrenti, massimizzando il guadagno netto aziendale.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==========================================
+             TAB 5: TESORERIA MAREA 80K & RADAR EMISSIONI
+             ========================================== -->
+        <section id="tab-treasury" class="tab-view">
+            <div class="hero-banner">
+                <div class="hero-left">
+                    <h1>Piano Allocazione Liquidit&agrave; Residua (80.000 &euro;)</h1>
+                    <p>Dopo l'esecuzione dei 60.000 &euro; su BTP Valore 2031, ecco la ripartizione ottimale per gli 80.000 &euro; liquidi in cassa di Marea S.r.l. per diversificare il Rischio Paese mantenendo rating elevato e liquidabilit&agrave; immediata.</p>
+                </div>
+            </div>
+
+            <div class="table-card">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Strumento &amp; Emittente</th>
+                            <th>Codice ISIN</th>
+                            <th>Rating</th>
+                            <th>Scadenza</th>
+                            <th>Cedola / Rendimento</th>
+                            <th>Tassazione</th>
+                            <th>Importo Consigliato</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Unione Europea (NextGenEU)</strong><br><small style="color:var(--text-muted);">Sovranazionale &bull; Zero Rischio Italia</small></td>
+                            <td><span class="isin-badge" onclick="copyIsin('EU000A4EG021')">EU000A4EG021 &#128203;</span></td>
+                            <td><span class="rat-badge rat-ok">AAA / AA+</span></td>
+                            <td>14/10/2030</td>
+                            <td>2,50% Fissa Annua</td>
+                            <td>12,5%</td>
+                            <td><strong>30.000,00 &euro;</strong></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Regno di Spagna (Bonos del Estado)</strong><br><small style="color:var(--text-muted);">Governativo Eurozona &bull; Diversificazione</small></td>
+                            <td><span class="isin-badge" onclick="copyIsin('ES0000012N43')">ES0000012N43 &#128203;</span></td>
+                            <td><span class="rat-badge rat-ok">Rating A</span></td>
+                            <td>30/07/2031</td>
+                            <td>3,10% Fissa Annua</td>
+                            <td>12,5%</td>
+                            <td><strong>25.000,00 &euro;</strong></td>
+                        </tr>
+                        <tr>
+                            <td><strong>BTP Italia / BOT Riserva Pronta</strong><br><small style="color:var(--text-muted);">Protezione Inflazione FOI / Liquidit&agrave; Breve</small></td>
+                            <td><span class="isin-badge" onclick="copyIsin('IT0005713547')">IT0005713547 &#128203;</span></td>
+                            <td><span class="rat-badge rat-warn">BBB</span></td>
+                            <td>23/06/2031</td>
+                            <td>1,60% Reale + Inflaz.</td>
+                            <td>12,5%</td>
+                            <td><strong>25.000,00 &euro;</strong></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Archivio Valutazione Proposta Banca Luglio 2026 -->
+            <div class="sec-header">
+                <h2 class="sec-title">&#128721; Archivio Proposte Bancarie Scartate (Tutela Capitale)</h2>
+            </div>
+            <div class="holding-card" style="border-left: 4px solid var(--danger);">
+                <div class="hc-top">
+                    <span class="hc-title">Proposta Certificati Intesa Sanpaolo (50.000 &euro; - Luglio 2026)</span>
+                    <span class="rat-badge rat-danger">SCARTATA PER INEFFICIENZA</span>
+                </div>
+                <p style="font-size:0.84rem;color:var(--text-muted);margin-bottom:12px;">
+                    I 3 certificati proposti dalla banca (<code>IT0005717498</code> Digital Az. Italia 2031 prot. 95%, <code>IT0005717605</code> Digital Gold 2031, <code>IT0005717514</code> Equity Protection 2033) presentavano <strong>tassazione penalizzante al 26%</strong>, cedole condizionate a barriera, <strong>costi impliciti di collocamento di ~1.750 &euro; (3,5%)</strong> e rischio di perdita sul capitale (5% sul primo certificato). La scelta del <strong>BTP Valore 27OT31</strong> ha garantito capitale protetto al 100%, zero commissioni d'ingresso e tassazione al 12,5%.
+                </p>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Mobile Bottom Navigation Bar (Thumb Zone) -->
+    <nav class="bottom-nav" aria-label="Navigazione Mobile">
+        <div class="bottom-nav-inner">
+            <button class="bnav-item active" onclick="switchTab('dashboard')">
+                <span class="bnav-icon">&#128202;</span>
+                <span>Home</span>
+            </button>
+            <button class="bnav-item" onclick="switchTab('portfolio')">
+                <span class="bnav-icon">&#128188;</span>
+                <span>Titoli</span>
+            </button>
+            <button class="bnav-item" onclick="switchTab('forecasts')">
+                <span class="bnav-icon">&#128302;</span>
+                <span>Target</span>
+            </button>
+            <button class="bnav-item" onclick="switchTab('strategy')">
+                <span class="bnav-icon">&#129517;</span>
+                <span>Strategia</span>
+            </button>
+            <button class="bnav-item" onclick="switchTab('treasury')">
+                <span class="bnav-icon">&#127963;&#65039;</span>
+                <span>Tesoreria</span>
+            </button>
+        </div>
+    </nav>
+
+    <div id="toast" class="toast">Codice ISIN copiato!</div>
+
+    <script>
+        const ENCRYPTED_PAYLOAD = "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";
+        const VERIFY_HASH = "cfd6625237ba9c69d561c4394e752f5c4fcac8472a59f98b988232dc2e4b459f";
+        let DATA = null;
+        let pinBuffer = "";
+        let currentFilter = 'ALL';
+        let historyChartInstance = null;
+        let allocationChartInstance = null;
+        let barCompareInstance = null;
+
+        // Pure-JS SHA-256 (funziona sia su file:/// locale sia su https:// GitHub Pages)
+        function sha256Bytes(asciiBytes) {
+            const K = [
+                0x428a2f98,0x71374491,0xb5c0fbcf,0xe9b5dba5,0x3956c25b,0x59f111f1,0x923f82a4,0xab1c5ed5,
+                0xd807aa98,0x12835b01,0x243185be,0x550c7dc3,0x72be5d74,0x80deb1fe,0x9bdc06a7,0xc19bf174,
+                0xe49b69c1,0xefbe4786,0x0fc19dc6,0x240ca1cc,0x2de92c6f,0x4a7484aa,0x5cb0a9dc,0x76f988da,
+                0x983e5152,0xa831c66d,0xb00327c8,0xbf597fc7,0xc6e00bf3,0xd5a79147,0x06ca6351,0x14292967,
+                0x27b70a85,0x2e1b2138,0x4d2c6dfc,0x53380d13,0x650a7354,0x766a0abb,0x81c2c92e,0x92722c85,
+                0xa2bfe8a1,0xa81a664b,0xc24b8b70,0xc76c51a3,0xd192e819,0xd6990624,0xf40e3585,0x106aa070,
+                0x19a4c116,0x1e376c08,0x2748774c,0x34b0bcb5,0x391c0cb3,0x4ed8aa4a,0x5b9cca4f,0x682e6ff3,
+                0x748f82ee,0x78a5636f,0x84c87814,0x8cc70208,0x90befffa,0xa4506ceb,0xbef9a3f7,0xc67178f2
+            ];
+            let H = [0x6a09e667,0xbb67ae85,0x3c6ef372,0xa54ff53a,0x510e527f,0x9b05688c,0x1f83d9ab,0x5be0cd19];
+            const l = asciiBytes.length;
+            const bitLen = l * 8;
+            const padded = asciiBytes.slice();
+            padded.push(0x80);
+            while ((padded.length % 64) !== 56) padded.push(0);
+            padded.push(0,0,0,0, (bitLen >>> 24)&0xff, (bitLen >>> 16)&0xff, (bitLen >>> 8)&0xff, bitLen&0xff);
+
+            function rotr(n, x) { return (x >>> n) | (x << (32 - n)); }
+            for (let i = 0; i < padded.length; i += 64) {
+                const W = new Array(64);
+                for (let t = 0; t < 16; t++) {
+                    W[t] = ((padded[i+t*4]<<24) | (padded[i+t*4+1]<<16) | (padded[i+t*4+2]<<8) | (padded[i+t*4+3])) >>> 0;
+                }
+                for (let t = 16; t < 64; t++) {
+                    const s0 = (rotr(7, W[t-15]) ^ rotr(18, W[t-15]) ^ (W[t-15] >>> 3)) >>> 0;
+                    const s1 = (rotr(17, W[t-2]) ^ rotr(19, W[t-2]) ^ (W[t-2] >>> 10)) >>> 0;
+                    W[t] = (W[t-16] + s0 + W[t-7] + s1) >>> 0;
+                }
+                let [a,b,c,d,e,f,g,h] = H;
+                for (let t = 0; t < 64; t++) {
+                    const S1 = (rotr(6,e) ^ rotr(11,e) ^ rotr(25,e)) >>> 0;
+                    const ch = ((e & f) ^ ((~e) & g)) >>> 0;
+                    const temp1 = (h + S1 + ch + K[t] + W[t]) >>> 0;
+                    const S0 = (rotr(2,a) ^ rotr(13,a) ^ rotr(22,a)) >>> 0;
+                    const maj = ((a & b) ^ (a & c) ^ (b & c)) >>> 0;
+                    const temp2 = (S0 + maj) >>> 0;
+                    h = g; g = f; f = e; e = (d + temp1) >>> 0;
+                    d = c; c = b; b = a; a = (temp1 + temp2) >>> 0;
+                }
+                H = [(H[0]+a)>>>0,(H[1]+b)>>>0,(H[2]+c)>>>0,(H[3]+d)>>>0,(H[4]+e)>>>0,(H[5]+f)>>>0,(H[6]+g)>>>0,(H[7]+h)>>>0];
+            }
+            const out = [];
+            for (let i = 0; i < 8; i++) {
+                out.push((H[i]>>>24)&0xff, (H[i]>>>16)&0xff, (H[i]>>>8)&0xff, H[i]&0xff);
+            }
+            return out;
+        }
+
+        function bytesToHex(bytes) {
+            return bytes.map(b => b.toString(16).padStart(2, '0')).join('');
+        }
+
+        function tryUnlockWithKey(keyBytes, saveSession) {
+            const checkHex = bytesToHex(sha256Bytes(keyBytes));
+            if (checkHex !== VERIFY_HASH) return false;
+
+            const rawBin = atob(ENCRYPTED_PAYLOAD);
+            const decBytes = new Uint8Array(rawBin.length);
+            for (let i = 0; i < rawBin.length; i++) {
+                decBytes[i] = rawBin.charCodeAt(i) ^ keyBytes[i % keyBytes.length] ^ ((i * 31) & 0xFF);
+            }
+            const jsonStr = new TextDecoder('utf-8').decode(decBytes);
+            DATA = JSON.parse(jsonStr);
+
+            if (saveSession) {
+                localStorage.setItem('mareaAuthKey', JSON.stringify(keyBytes));
+            }
+            document.getElementById('lockScreen').classList.add('unlocked');
+            initApp();
+            return true;
+        }
+
+        function updatePinDots(isError) {
+            const dots = document.querySelectorAll('#pinDots .pin-dot');
+            dots.forEach((d, idx) => {
+                d.classList.toggle('filled', idx < pinBuffer.length);
+                d.classList.toggle('error', !!isError);
+            });
+        }
+
+        function pressPin(digit) {
+            if (pinBuffer.length >= 6) return;
+            document.getElementById('lockMsg').textContent = '';
+            pinBuffer += digit;
+            updatePinDots(false);
+
+            if (pinBuffer.length === 6) {
+                const inputStr = 'MareaSalt_2026_' + pinBuffer;
+                const ascii = Array.from(new TextEncoder().encode(inputStr));
+                const keyBytes = sha256Bytes(ascii);
+                const remember = document.getElementById('rememberPin').checked;
+
+                if (!tryUnlockWithKey(keyBytes, remember)) {
+                    updatePinDots(true);
+                    document.getElementById('lockMsg').textContent = 'PIN errato. Riprova.';
+                    setTimeout(() => {
+                        pinBuffer = '';
+                        updatePinDots(false);
+                    }, 650);
+                }
+            }
+        }
+
+        function backPin() {
+            pinBuffer = pinBuffer.slice(0, -1);
+            updatePinDots(false);
+        }
+
+        function clearPin() {
+            pinBuffer = '';
+            updatePinDots(false);
+            document.getElementById('lockMsg').textContent = '';
+        }
+
+        function lockApp() {
+            localStorage.removeItem('mareaAuthKey');
+            pinBuffer = '';
+            updatePinDots(false);
+            document.getElementById('lockScreen').classList.remove('unlocked');
+        }
+
+        document.addEventListener('keydown', function(e) {
+            const lockEl = document.getElementById('lockScreen');
+            if (lockEl.classList.contains('unlocked')) return;
+            if (e.key >= '0' && e.key <= '9') {
+                pressPin(e.key);
+            } else if (e.key === 'Backspace') {
+                backPin();
+            } else if (e.key === 'Escape') {
+                clearPin();
+            }
+        });
+
+        function fmtEuro(val) {
+            return new Intl.NumberFormat('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(val) + ' \u20AC';
+        }
+        function fmtNum(val, dec = 3) {
+            return new Intl.NumberFormat('it-IT', { minimumFractionDigits: dec, maximumFractionDigits: dec }).format(val);
+        }
+
+        function copyIsin(isin) {
+            if (navigator.clipboard) {
+                navigator.clipboard.writeText(isin);
+            }
+            const t = document.getElementById('toast');
+            t.textContent = 'ISIN ' + isin + ' copiato negli appunti!';
+            t.classList.add('show');
+            setTimeout(() => t.classList.remove('show'), 2200);
+        }
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-view').forEach(el => el.classList.remove('active'));
+            document.getElementById('tab-' + tabId).classList.add('active');
+
+            const tabs = ['dashboard', 'portfolio', 'forecasts', 'strategy', 'treasury'];
+            const idx = tabs.indexOf(tabId);
+            document.querySelectorAll('.desktop-nav .nav-btn').forEach((btn, i) => btn.classList.toggle('active', i === idx));
+            document.querySelectorAll('.bottom-nav .bnav-item').forEach((btn, i) => btn.classList.toggle('active', i === idx));
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function buildHoldingCard(h) {
+            const plSign = h.PL >= 0 ? '+' : '';
+            const plClass = h.PL >= 0 ? 'gain' : 'loss';
+            const navStr = h.IsBond ? fmtNum(h.NAV, 3) + '%' : fmtNum(h.NAV, 3) + ' \u20AC';
+            const qtyStr = h.IsBond ? fmtEuro(h.Quote) + ' Nom.' : fmtNum(h.Quote, 2) + ' quote';
+            const weight = ((h.Attuale / DATA.totAttuale) * 100).toFixed(1) + '%';
+
+            return `
+            <div class="holding-card">
+                <div class="hc-top">
+                    <span class="isin-badge" onclick="copyIsin('${h.ISIN}')" title="Tocca per copiare ISIN">${h.ISIN} &#128203;</span>
+                    <span class="rat-badge ${h.RatClass}">${h.Rating}</span>
+                </div>
+                <div class="hc-title">${h.Nome}</div>
+                <div class="hc-sub">${h.NomeEsteso} &bull; <strong>Peso: ${weight}</strong></div>
+                <div class="hc-metrics">
+                    <div class="hcm-item">
+                        <span>Capitale Investito</span>
+                        <strong>${fmtEuro(h.Investito)}</strong>
+                    </div>
+                    <div class="hcm-item">
+                        <span>Valore Attuale</span>
+                        <strong>${fmtEuro(h.Attuale)}</strong>
+                    </div>
+                    <div class="hcm-item">
+                        <span>${h.IsBond ? 'Prezzo MOT' : 'NAV Quota'}</span>
+                        <strong>${navStr}</strong>
+                    </div>
+                    <div class="hcm-item">
+                        <span>P/L Latente</span>
+                        <strong class="${plClass}">${plSign}${fmtEuro(h.PL)} (${plSign}${h.PLPerc}%)</strong>
+                    </div>
+                </div>
+                <div class="hc-footer">
+                    <span>Quantit&agrave;: <strong>${qtyStr}</strong></span>
+                    <span>Fisco: <strong>${h.Tassazione}</strong> &bull; Scad: <strong>${h.Scadenza}</strong></span>
+                </div>
+            </div>`;
+        }
+
+        function filterHoldings(filter, btn) {
+            currentFilter = filter;
+            document.querySelectorAll('.filter-group .filter-chip').forEach(c => c.classList.remove('active'));
+            btn.classList.add('active');
+            renderPortfolioCards();
+        }
+
+        function renderPortfolioCards() {
+            if (!DATA) return;
+            const q = (document.getElementById('searchInput').value || '').toLowerCase();
+            const filtered = DATA.holdings.filter(h => {
+                if (currentFilter === 'BOND' && !h.IsBond) return false;
+                if (currentFilter === 'FUND' && h.IsBond) return false;
+                if (currentFilter === 'GAIN' && h.PL < 0) return false;
+                if (q && !(h.Nome.toLowerCase().includes(q) || h.ISIN.toLowerCase().includes(q) || h.NomeEsteso.toLowerCase().includes(q))) return false;
+                return true;
+            });
+            document.getElementById('portfolioHoldings').innerHTML = filtered.map(buildHoldingCard).join('');
+        }
+
+        function initApp() {
+            if (!DATA) return;
+            document.title = 'Portfolio Insight | ' + DATA.intestatario;
+            document.getElementById('brandSub').textContent = DATA.intestatario + ' \u2022 ' + DATA.rappresentante;
+            document.getElementById('heroSub').innerHTML = DATA.banca + ' &bull; Aggiornato il <strong>' + DATA.generatedAt + '</strong>';
+            document.getElementById('badgeDossier').textContent = DATA.dossier;
+            document.getElementById('badgeConto').textContent = DATA.conto;
+
+            // KPIs
+            document.getElementById('kpiInvestito').textContent = fmtEuro(DATA.totInvestito);
+            document.getElementById('kpiAttuale').textContent = fmtEuro(DATA.totAttuale);
+            const plSign = DATA.totPL >= 0 ? '+' : '';
+            const kpiPL = document.getElementById('kpiPL');
+            kpiPL.textContent = plSign + fmtEuro(DATA.totPL);
+            kpiPL.className = 'kpi-value ' + (DATA.totPL >= 0 ? 'gain' : 'loss');
+            document.getElementById('kpiPLPerc').textContent = plSign + DATA.totPLPerc + '% sul capitale investito (+ ' + fmtEuro(DATA.totRealizzato) + ' realizzati)';
+            document.getElementById('kpiCedola').textContent = '+1.942,50 \u20AC';
+
+            // Holdings
+            document.getElementById('dashboardHoldings').innerHTML = DATA.holdings.map(buildHoldingCard).join('');
+            renderPortfolioCards();
+
+            // Closed Positions
+            const closedHtml = DATA.posizioniChiuse.map(cp => `
+                <tr>
+                    <td><span class="isin-badge" onclick="copyIsin('${cp.ISIN}')">${cp.ISIN}</span></td>
+                    <td><strong>${cp.Nome}</strong><br><small style="color:var(--text-muted)">${cp.Note}</small></td>
+                    <td>${cp.DataDisinvestimento}</td>
+                    <td>${fmtEuro(cp.ImportoAcquisto)}</td>
+                    <td><strong>${fmtEuro(cp.ControvaloreUscita)}</strong></td>
+                    <td class="gain"><strong>+${fmtEuro(cp.PerformanceEuro)} (+${cp.PerformancePerc}%)</strong></td>
+                    <td>${cp.ContoAccredito}</td>
+                </tr>
+            `).join('');
+            document.getElementById('closedPositionsBody').innerHTML = closedHtml;
+
+            // Forecasts
+            const activeFc = DATA.previsioni[DATA.previsioni.length - 1];
+            if (activeFc) {
+                const fcDelta = (((activeFc.totalePrevisto - DATA.totAttuale) / DATA.totAttuale) * 100).toFixed(2);
+                document.getElementById('forecastHero').innerHTML = `
+                    <div class="hero-left">
+                        <h1>Previsione Portafoglio a 60 Giorni</h1>
+                        <p>Elaborata il <strong>${activeFc.dataCreazione}</strong> &bull; Verifica programmata il <strong>${activeFc.dataScadenza}</strong></p>
+                    </div>
+                    <div class="hero-badges">
+                        <div class="hero-badge">Target Stimato: <strong>${fmtEuro(activeFc.totalePrevisto)}</strong></div>
+                        <div class="hero-badge">Delta Atteso: <strong>+${fcDelta}%</strong></div>
+                    </div>
+                `;
+                document.getElementById('forecastCards').innerHTML = activeFc.fondi.map(f => {
+                    const unit = f.IsBond ? '%' : ' \u20AC';
+                    return `
+                    <div class="holding-card">
+                        <div class="hc-top">
+                            <span class="isin-badge" onclick="copyIsin('${f.ISIN}')">${f.ISIN}</span>
+                            <span class="rat-badge rat-ok">${f.Rating}</span>
+                        </div>
+                        <div class="hc-title">${f.Nome}</div>
+                        <div class="hc-metrics" style="margin-top:10px;">
+                            <div class="hcm-item"><span>Valore Attuale</span><strong>${fmtNum(f.NAVAttuale, 4)}${unit}</strong></div>
+                            <div class="hcm-item"><span>Target 60gg</span><strong style="color:var(--blue)">${fmtNum(f.NAVPrevisto, 4)}${unit}</strong></div>
+                            <div class="hcm-item"><span>Delta Atteso</span><strong class="gain">+${f.DeltaPercAttesa}%</strong></div>
+                            <div class="hcm-item"><span>Controvalore Target</span><strong>${fmtEuro(f.ValorePrevisto)}</strong></div>
+                        </div>
+                        <p style="font-size:0.8rem;color:var(--text-muted);">${f.Note}</p>
+                    </div>`;
+                }).join('');
+            }
+
+            // Past Forecasts Table
+            const pastRows = [];
+            DATA.previsioni.forEach(p => {
+                p.fondi.forEach(f => {
+                    const unit = f.IsBond ? '%' : ' \u20AC';
+                    const badge = p.revisitata ? '<span class="rat-badge rat-neutral">Verificata</span>' : '<span class="rat-badge rat-ok">In Corso</span>';
+                    pastRows.push(`
+                        <tr>
+                            <td><strong>${f.Nome}</strong><br><small style="color:var(--text-muted)">${f.ISIN}</small></td>
+                            <td>${p.dataCreazione}</td>
+                            <td>${p.dataScadenza}</td>
+                            <td>${fmtNum(f.NAVAttuale, 3)}${unit}</td>
+                            <td><strong>${fmtNum(f.NAVPrevisto, 3)}${unit}</strong> (+${f.DeltaPercAttesa}%)</td>
+                            <td>${badge}</td>
+                        </tr>
+                    `);
+                });
+            });
+            document.getElementById('pastForecastsBody').innerHTML = pastRows.join('');
+
+            // Strategy Table
+            document.getElementById('strategyTableBody').innerHTML = DATA.holdings.map(h => `
+                <tr>
+                    <td><strong>${h.Nome}</strong><br><small style="color:var(--text-muted)">${h.ISIN}</small></td>
+                    <td><span class="rat-badge ${h.RatClass}">${h.Azione}</span></td>
+                    <td style="font-size:0.82rem;color:var(--text-muted);max-width:420px;">${h.Analisi}</td>
+                    <td><strong>${h.Alternativa}</strong></td>
+                </tr>
+            `).join('');
+
+            renderCharts();
+        }
+
+        function renderCharts() {
+            if (!DATA || typeof Chart === 'undefined') return;
+            const isDark = document.body.classList.contains('dark');
+            const textColor = isDark ? '#cbd5e1' : '#475569';
+            const gridColor = isDark ? 'rgba(255,255,255,0.07)' : 'rgba(15,23,42,0.06)';
+
+            if (historyChartInstance) historyChartInstance.destroy();
+            if (allocationChartInstance) allocationChartInstance.destroy();
+            if (barCompareInstance) barCompareInstance.destroy();
+
+            // 1. Line Chart Storico
+            const ctxHist = document.getElementById('historyChart').getContext('2d');
+            historyChartInstance = new Chart(ctxHist, {
+                type: 'line',
+                data: {
+                    labels: DATA.snapshots.map(s => s.data),
+                    datasets: [
+                        {
+                            label: 'Valore Attuale (\u20AC)',
+                            data: DATA.snapshots.map(s => s.totaleAttuale),
+                            borderColor: '#10b981',
+                            backgroundColor: 'rgba(16, 185, 129, 0.12)',
+                            borderWidth: 3,
+                            fill: true,
+                            tension: 0.3
+                        },
+                        {
+                            label: 'Capitale Investito (\u20AC)',
+                            data: DATA.snapshots.map(s => s.totaleInvestito),
+                            borderColor: '#d4af37',
+                            borderDash: [6, 4],
+                            borderWidth: 2,
+                            fill: false,
+                            tension: 0.1
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { labels: { color: textColor } } },
+                    scales: {
+                        x: { ticks: { color: textColor }, grid: { color: gridColor } },
+                        y: { ticks: { color: textColor }, grid: { color: gridColor } }
+                    }
+                }
+            });
+
+            // 2. Doughnut Allocation Chart
+            const ctxAlloc = document.getElementById('allocationChart').getContext('2d');
+            allocationChartInstance = new Chart(ctxAlloc, {
+                type: 'doughnut',
+                data: {
+                    labels: DATA.holdings.map(h => h.Nome),
+                    datasets: [{
+                        data: DATA.holdings.map(h => h.Attuale),
+                        backgroundColor: ['#d4af37', '#0ea5e9', '#10b981', '#8b5cf6'],
+                        borderWidth: 2,
+                        borderColor: isDark ? '#111c30' : '#ffffff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom', labels: { color: textColor, padding: 12 } }
+                    }
+                }
+            });
+
+            // 3. Bar Compare Chart
+            const ctxBar = document.getElementById('barCompareChart').getContext('2d');
+            barCompareInstance = new Chart(ctxBar, {
+                type: 'bar',
+                data: {
+                    labels: DATA.holdings.map(h => h.Nome),
+                    datasets: [
+                        {
+                            label: 'Investito (\u20AC)',
+                            data: DATA.holdings.map(h => h.Investito),
+                            backgroundColor: 'rgba(212, 175, 55, 0.85)',
+                            borderRadius: 6
+                        },
+                        {
+                            label: 'Attuale (\u20AC)',
+                            data: DATA.holdings.map(h => h.Attuale),
+                            backgroundColor: 'rgba(16, 185, 129, 0.85)',
+                            borderRadius: 6
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { labels: { color: textColor } } },
+                    scales: {
+                        x: { ticks: { color: textColor }, grid: { color: gridColor } },
+                        y: { ticks: { color: textColor }, grid: { color: gridColor } }
+                    }
+                }
+            });
+        }
+
+        function toggleTheme() {
+            const isDark = document.body.classList.toggle('dark');
+            localStorage.setItem('mareaTheme', isDark ? 'dark' : 'light');
+            document.getElementById('themeBtn').innerHTML = isDark ? '&#9728;&#65039;' : '&#127769;';
+            renderCharts();
+        }
+
+        (function() {
+            if (localStorage.getItem('mareaTheme') === 'dark') {
+                document.body.classList.add('dark');
+                document.getElementById('themeBtn').innerHTML = '&#9728;&#65039;';
+            }
+            const savedKey = localStorage.getItem('mareaAuthKey');
+            if (savedKey) {
+                try {
+                    const keyArr = JSON.parse(savedKey);
+                    tryUnlockWithKey(keyArr, false);
+                } catch (e) {}
+            }
+        })();
+    </script>
+</body>
+</html>
